@@ -85,6 +85,7 @@ const buidlerConfig: HardhatUserConfig = {
     apiKey: {
       mainnet: 'XFAGSFB6UXE9MFTA9AHJMGHMXI8IXRVCHW',
       goerli: 'XFAGSFB6UXE9MFTA9AHJMGHMXI8IXRVCHW',
+      sepolia: 'XFAGSFB6UXE9MFTA9AHJMGHMXI8IXRVCHW',
       bsc: 'A263TZTNDWUC9NKI1AMBVJJC8H3SA547AF',
       bscTestnet: 'A263TZTNDWUC9NKI1AMBVJJC8H3SA547AF',
       avalanche: 'WN8CWW97AHIYUBC665Y4HZ4E5V4GUJZR2Y',
@@ -114,6 +115,7 @@ const buidlerConfig: HardhatUserConfig = {
     avalanche: getCommonNetworkConfig(eAvalancheNetwork.avalanche, 43114),
     fuji: getCommonNetworkConfig(eAvalancheNetwork.fuji, 43113),
     goerli: getCommonNetworkConfig(eEthereumNetwork.goerli, 5),
+    sepolia: getCommonNetworkConfig(eEthereumNetwork.sepolia, 11155111),
     hardhat: {
       // hardfork: 'istanbul',
       blockGasLimit: DEFAULT_BLOCK_GAS_LIMIT,

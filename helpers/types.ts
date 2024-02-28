@@ -15,6 +15,7 @@ export enum eEthereumNetwork {
   hardhat = 'hardhat',
   tenderly = 'tenderly',
   goerli = 'goerli',
+  sepolia = 'sepolia',
 }
 
 export enum ePolygonNetwork {
@@ -77,6 +78,7 @@ export interface iEthereumParamsPerNetwork<T> {
   [eEthereumNetwork.hardhat]: T;
   [eEthereumNetwork.tenderly]: T;
   [eEthereumNetwork.goerli]: T;
+  [eEthereumNetwork.sepolia]: T;
 }
 
 export interface iPolygonParamsPerNetwork<T> {

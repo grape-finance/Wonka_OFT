@@ -1,37 +1,29 @@
 // @ts-ignore
-import { HardhatNetworkForkingUserConfig, HardhatUserConfig } from 'hardhat/types';
-import {
-  eAvalancheNetwork,
-  eEthereumNetwork,
-  ePolygonNetwork,
-  eXDaiNetwork,
-  iParamsPerNetwork,
-} from './helpers/types';
+import { HardhatNetworkForkingUserConfig, HardhatUserConfig } from 'hardhat/types'
+import { eAvalancheNetwork, eEthereumNetwork, ePolygonNetwork, eXDaiNetwork, iParamsPerNetwork } from './helpers/types'
 
-require('dotenv').config();
+require('dotenv').config()
 
-const INFURA_KEY = process.env.INFURA_KEY || '';
-const ALCHEMY_KEY = process.env.ALCHEMY_KEY || '';
-const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID || '';
-const FORK = process.env.FORK || '';
-const FORK_BLOCK_NUMBER = process.env.FORK_BLOCK_NUMBER
-  ? parseInt(process.env.FORK_BLOCK_NUMBER)
-  : 0;
+const INFURA_KEY = process.env.INFURA_KEY || ''
+const ALCHEMY_KEY = process.env.ALCHEMY_KEY || ''
+const TENDERLY_FORK_ID = process.env.TENDERLY_FORK_ID || ''
+const FORK = process.env.FORK || ''
+const FORK_BLOCK_NUMBER = process.env.FORK_BLOCK_NUMBER ? parseInt(process.env.FORK_BLOCK_NUMBER) : 0
 
-const GWEI = 1000 * 1000 * 1000;
+const GWEI = 1000 * 1000 * 1000
 
 export const buildForkConfig = (): HardhatNetworkForkingUserConfig | undefined => {
-  let forkMode;
+  let forkMode
   if (FORK) {
     forkMode = {
       url: NETWORKS_RPC_URL[FORK],
-    };
+    }
     if (FORK_BLOCK_NUMBER || BLOCK_TO_FORK[FORK]) {
-      forkMode.blockNumber = FORK_BLOCK_NUMBER || BLOCK_TO_FORK[FORK];
+      forkMode.blockNumber = FORK_BLOCK_NUMBER || BLOCK_TO_FORK[FORK]
     }
   }
-  return forkMode;
-};
+  return forkMode
+}
 
 export const NETWORKS_RPC_URL: iParamsPerNetwork<string> = {
   [eEthereumNetwork.kovan]: ALCHEMY_KEY
@@ -58,7 +50,11 @@ export const NETWORKS_RPC_URL: iParamsPerNetwork<string> = {
   [eEthereumNetwork.goerli]: INFURA_KEY
     ? `https://goerli.infura.io/v3/${INFURA_KEY}`
     : `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_KEY}`,
-};
+
+  [eEthereumNetwork.sepolia]: INFURA_KEY
+    ? `https://sepolia.infura.io/v3/${INFURA_KEY}`
+    : `https://eth-sepolia.alchemyapi.io/v2/${ALCHEMY_KEY}`,
+}
 
 export const NETWORKS_DEFAULT_GAS: iParamsPerNetwork<number> = {
   [eEthereumNetwork.kovan]: 3 * GWEI,
@@ -74,7 +70,8 @@ export const NETWORKS_DEFAULT_GAS: iParamsPerNetwork<number> = {
   [eAvalancheNetwork.avalanche]: 225 * GWEI,
   [eAvalancheNetwork.fuji]: 85 * GWEI,
   [eEthereumNetwork.goerli]: 3 * GWEI,
-};
+  [eEthereumNetwork.sepolia]: 3 * GWEI,
+}
 
 export const BLOCK_TO_FORK: iParamsPerNetwork<number | undefined> = {
   [eEthereumNetwork.main]: 12406069,
@@ -90,4 +87,5 @@ export const BLOCK_TO_FORK: iParamsPerNetwork<number | undefined> = {
   [eAvalancheNetwork.avalanche]: undefined,
   [eAvalancheNetwork.fuji]: undefined,
   [eEthereumNetwork.goerli]: undefined,
-};
+  [eEthereumNetwork.sepolia]: undefined,
+}
