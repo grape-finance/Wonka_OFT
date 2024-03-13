@@ -6,7 +6,6 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
-// import "hardhat/console.sol";
 
 contract Presale is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
@@ -15,15 +14,14 @@ contract Presale is ReentrancyGuard, Ownable {
     struct PresaleConfig {
         address usdc;
         address presaleToken;
-        uint256 price;
         uint256 startTime;
         uint256 endTime;
         uint256 softcap;
         uint256 hardcap;
-        uint256[] capPerLevel;
         uint256 minContribution;
         uint256 maxContribution;
     }
+
     enum PresaleStatus {
         Started,
         Finished
@@ -41,12 +39,12 @@ contract Presale is ReentrancyGuard, Ownable {
 
     bool public initialized = false;
 
+    uint256[] public price;
+    uint256[] public capPerLevel;
     PresaleConfig public presaleConfig;
     PresaleStatus public presaleStatus;
     // Presale Level will rise up once 1 week passed or capLevel reached.
-    uint public presaleLevel;
-
-    uint constant SUPPLY_PERCENT_PRECISION = 10000;
+    uint public presaleLevel = 1;
 
     uint256 public totalContributed;
     uint256[7] public contributedPerLevel;
@@ -59,12 +57,18 @@ contract Presale is ReentrancyGuard, Ownable {
 
     constructor() {}
 
-    function initialize(PresaleConfig memory _config) external onlyOwner {
+    function initialize(
+        PresaleConfig memory _config,
+        uint256[] memory _price,
+        uint256[] memory _capPerLevel
+    ) external onlyOwner {
         require(!initialized, "already initialized");
         require(owner() == address(0x0) || _msgSender() == owner(), "not allowed");
 
         initialized = true;
         presaleConfig = _config;
+        price = _price;
+        capPerLevel = _capPerLevel;
     }
 
     function contribute(uint256 _amount) external nonReentrant {
@@ -88,10 +92,10 @@ contract Presale is ReentrancyGuard, Ownable {
         totalContributed += _amount;
         contributedPerLevel[presaleLevel] += _amount;
 
-        updatePresaleLevel();
+        updatePresaleStatus();
 
         funder.contributedAmount = funder.contributedAmount + _amount;
-        funder.claimableAmount = funder.claimableAmount + _amount * presaleConfig.price;
+        funder.claimableAmount = funder.claimableAmount + _amount * price[presaleLevel];
         funder.status = FunderStatus.Invested;
 
         emit Contribute(_msgSender(), _amount);
@@ -112,19 +116,14 @@ contract Presale is ReentrancyGuard, Ownable {
         emit Claimed(_msgSender(), funder.claimableAmount);
     }
 
-    function updatePresaleLevel() public {
+    function updatePresaleStatus() public {
         if (totalContributed >= presaleConfig.hardcap) presaleStatus = PresaleStatus.Finished;
         if (
-            contributedPerLevel[presaleLevel] >= presaleConfig.capPerLevel[presaleLevel] ||
-            block.timestamp >= presaleConfig.startTime + presaleLevel * 7 * 24 * 60 * 60
+            contributedPerLevel[presaleLevel] >= capPerLevel[presaleLevel] ||
+            block.timestamp >= presaleConfig.startTime + presaleLevel * 24 * 60 * 60
         ) {
             // In case contributed amount per level is reached cap amount , Or level period is passed
-            // console.log("presaleLevelBefore", presaleLevel);
-            // console.log("TokenPriceBefore", presaleConfig.price);
             presaleLevel++;
-            presaleConfig.price = presaleConfig.price.mul(10).div(12);
-            // console.log("presaleLevelAfter", presaleLevel);
-            // console.log("TokenPriceAfter", presaleConfig.price);
         }
     }
 

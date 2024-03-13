@@ -6,7 +6,7 @@ import { BigNumber } from 'ethers'
 import { keccak256, toBuffer, ecsign, bufferToHex, MAX_INTEGER } from 'ethereumjs-util'
 import { MockERC20, MockUSDC, Presale, WonkaOFT } from '../typechain'
 import { execPath } from 'process'
-import { parseEther, parseUnits } from 'ethers/lib/utils'
+import { formatUnits, parseEther, parseUnits } from 'ethers/lib/utils'
 
 describe('test', function () {
   // Account
@@ -60,28 +60,43 @@ describe('test', function () {
       USDCDecimal = await USDC.decimals()
 
       let capPerLevel: BigNumber[] = []
+      let price: BigNumber[] = []
       let hardcap: BigNumber = BigNumber.from(0)
 
       for (let i = 0; i < 8; i++) {
-        if (i == 0) capPerLevel[i] = parseUnits('1000', USDCDecimal)
-        else capPerLevel[i] = capPerLevel[i - 1].mul(BigNumber.from(12)).div(BigNumber.from(10))
-        hardcap = hardcap.add(capPerLevel[i])
+        if (i == 0) {
+          capPerLevel[i] = parseUnits('1000', USDCDecimal)
+          price[i] = parseUnits('100', 18 - USDCDecimal)
+        } else {
+          capPerLevel[i] = capPerLevel[i - 1].mul(BigNumber.from(12)).div(BigNumber.from(10))
+          price[i] = price[i - 1].mul(BigNumber.from(10)).div(BigNumber.from(12))
+          hardcap = hardcap.add(capPerLevel[i])
+        }
       }
       let PresaleConfig = {
         usdc: USDC.address,
         presaleToken: WONKA.address, // WonkaOFT token address
-        price: 100 * 10 ** (18 - USDCDecimal), //  1 Wonka = 0.01$
         startTime: Math.floor(Date.now() / 1000), // now
         endTime: Math.floor(Date.now() / 1000) + 8 * 7 * 24 * 60 * 60, // 8 weeks
         softcap: parseUnits('1000', USDCDecimal),
         hardcap,
-        capPerLevel,
         minContribution: parseUnits('200', USDCDecimal),
         maxContribution: parseUnits('2000', USDCDecimal),
+        // price: price, //  1 Wonka = 0.01$ , increasing 1.2x per level
+        // capPerLevel: capPerLevel,
       }
 
-      await PresaleContract.initialize(PresaleConfig)
-      await expect(PresaleContract.initialize(PresaleConfig)).to.be.reverted
+      await PresaleContract.initialize(PresaleConfig, price, capPerLevel)
+
+      // const config = await PresaleContract.presaleConfig()
+      // console.log('config', config)
+      let _price  = await PresaleContract.price(0);
+
+      console.log('_price', +_price)
+      _price  = await PresaleContract.price(1);
+      console.log('_price', +_price)
+
+      await expect(PresaleContract.initialize(PresaleConfig, price, capPerLevel)).to.be.reverted
 
       await WONKA.mint(PresaleContract.address, parseEther('2000000'))
 
@@ -91,9 +106,10 @@ describe('test', function () {
     })
     it('Check Config', async function () {
       const config = await PresaleContract.presaleConfig()
-      console.log('config', config)
     })
     it('Contribute', async function () {
+      await ethers.provider.send('evm_increaseTime', [60])
+
       await USDC.connect(alice).approve(PresaleContract.address, parseUnits('1000', USDCDecimal))
       await USDC.connect(bob).approve(PresaleContract.address, parseUnits('1000', USDCDecimal))
       await USDC.connect(quinn).approve(PresaleContract.address, parseUnits('2000', USDCDecimal))
@@ -105,16 +121,17 @@ describe('test', function () {
       await PresaleContract.connect(bob).contribute(parseUnits('1000', USDCDecimal))
 
       await expect(PresaleContract.connect(bob).contribute(parseUnits('1000', USDCDecimal))).to.be.reverted
+      
     })
     it('Check Presale Level', async function () {
       let level = await PresaleContract.presaleLevel()
       console.log('level', level)
       const aWeeksInSeconds = 7 * 24 * 60 * 60 // 3 days * 24 hours * 60 minutes * 60 seconds
-      
+
       // Increase the EVM time to the future timestamp
       await ethers.provider.send('evm_increaseTime', [aWeeksInSeconds])
 
-      await PresaleContract.updatePresaleLevel()
+      await PresaleContract.updatePresaleStatus()
 
       level = await PresaleContract.presaleLevel()
       console.log('level', level)
@@ -127,16 +144,16 @@ describe('test', function () {
     it('Claim', async function () {
       await PresaleContract.setPresaleStatus(1)
 
-      console.log('WonkaBal', +(await WONKA.balanceOf(PresaleContract.address)))
-      console.log('funder', await PresaleContract.funders(alice.address))
+      // console.log('WonkaBal', +(await WONKA.balanceOf(PresaleContract.address)))
+      // console.log('funder', await PresaleContract.funders(alice.address))
 
       await PresaleContract.connect(alice).claim()
       await PresaleContract.connect(bob).claim()
       await PresaleContract.connect(quinn).claim()
 
-      console.log('aliceBal', +(await WONKA.balanceOf(alice.address)))
-      console.log('bobBal', +(await WONKA.balanceOf(bob.address)))
-      console.log('quinnBal', +(await WONKA.balanceOf(quinn.address)))
+      // console.log('aliceBal', +(await WONKA.balanceOf(alice.address)))
+      // console.log('bobBal', +(await WONKA.balanceOf(bob.address)))
+      // console.log('quinnBal', +(await WONKA.balanceOf(quinn.address)))
 
       await expect(PresaleContract.connect(alice).claim()).to.be.revertedWith('You are not a funder')
     })

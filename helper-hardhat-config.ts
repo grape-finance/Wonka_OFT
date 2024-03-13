@@ -51,9 +51,7 @@ export const NETWORKS_RPC_URL: iParamsPerNetwork<string> = {
     ? `https://goerli.infura.io/v3/${INFURA_KEY}`
     : `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_KEY}`,
 
-  [eEthereumNetwork.sepolia]: INFURA_KEY
-    ? `https://sepolia.infura.io/v3/${INFURA_KEY}`
-    : `https://eth-sepolia.alchemyapi.io/v2/${ALCHEMY_KEY}`,
+  [eEthereumNetwork.sepolia]: 'https://eth-sepolia.g.alchemy.com/v2/mGsqrKffb5Yt_jmlL0UsiyPz8ZT7jBCv',
 }
 
 export const NETWORKS_DEFAULT_GAS: iParamsPerNetwork<number> = {
@@ -70,7 +68,7 @@ export const NETWORKS_DEFAULT_GAS: iParamsPerNetwork<number> = {
   [eAvalancheNetwork.avalanche]: 225 * GWEI,
   [eAvalancheNetwork.fuji]: 85 * GWEI,
   [eEthereumNetwork.goerli]: 3 * GWEI,
-  [eEthereumNetwork.sepolia]: 3 * GWEI,
+  [eEthereumNetwork.sepolia]: 65 * GWEI,
 }
 
 export const BLOCK_TO_FORK: iParamsPerNetwork<number | undefined> = {
