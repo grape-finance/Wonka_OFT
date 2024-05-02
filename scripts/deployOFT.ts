@@ -1,8 +1,8 @@
 import { parseEther, parseUnits } from 'ethers/lib/utils'
 import { ethers, network, run } from 'hardhat'
-import contractAddr from './address.json'
+import { WONKA_ADDRESS, USDC_ADDRESS, LZEndpointAddress, chainId } from './address'
 
-// npx hardhat run scripts/deployOFT.ts --network sepolia
+// npx hardhat run scripts/deployOFT.ts --network fuji
 
 async function main(): Promise<void> {
   const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay * 1000))
@@ -11,37 +11,24 @@ async function main(): Promise<void> {
   if (deployer === undefined) throw new Error('Deployer is undefined.')
   console.log('Account balance:', (await deployer.getBalance()).toString())
 
-  const Mock_USDC = await ethers.getContractFactory('MockUSDC')
-  const Mock_USDC_Deployed = await Mock_USDC.deploy('USDC', 'USDC', parseUnits('10000', 6))
-  console.log('Mock_USDC_Deployed.address', Mock_USDC_Deployed.address)
+  const lzEndpointAddress = LZEndpointAddress[chainId]
 
-  // const StartContract = await ethers.getContractAt('MockERC20', "0x2df77eE5a6FcF23F666650ed53bE071E7288eCb6")
-
-  // await StartContract.mint(deployer.address, parseEther("100"))
-
-  // let OFTendPointAddr = '0xae92d5aD7583AD66E49A0c67BAd18F6ba52dDDc1'
+  // const Mock_USDC = await ethers.getContractFactory('MockUSDC')
+  // const Mock_USDC_Deployed = await Mock_USDC.deploy('USDC', 'USDC', parseUnits('10000', 6))
+  // console.log('Mock_USDC_Deployed.address', Mock_USDC_Deployed.address)
 
   // const WonkaOFT = await ethers.getContractFactory('WonkaOFT')
   // const WonkaOFT_Deployed = await WonkaOFT.deploy(
   //   'WonkaOFT',
   //   'WonkaOFT',
-  //   OFTendPointAddr,
+  //   lzEndpointAddress,
   //   deployer.address,
   //   parseEther('10000'),
   // )
   // console.log('WonkaOFT_Deployed.address', WonkaOFT_Deployed.address)
 
-  // await sleep(20)
-
-  await verify(Mock_USDC_Deployed.address, ['USDC', 'USDC', parseUnits('10000', 6)])
-  // await verify(contractAddr.WonkaOFT, [
-  //   'WonkaOFT',
-  //   'WonkaOFT',
-  //   OFTendPointAddr,
-  //   deployer.address,
-  //   parseEther('10000'),
-  // ])
-
+  await verify(USDC_ADDRESS[chainId], ['USDC', 'USDC', parseUnits('10000', 6)])
+  await verify(WONKA_ADDRESS[chainId], ['WonkaOFT', 'WonkaOFT', lzEndpointAddress, deployer.address, parseEther('10000')])
 }
 
 const verify = async (contractAddress: string, args: any[]) => {

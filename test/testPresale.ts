@@ -22,6 +22,9 @@ describe('test', function () {
 
   let USDCDecimal
 
+  const code1="A1B2C"
+  const code2="X1Y2Z"
+
   before(async () => {
     const signers = await ethers.getSigners()
     owner = signers[0]
@@ -82,21 +85,20 @@ describe('test', function () {
         hardcap,
         minContribution: parseUnits('200', USDCDecimal),
         maxContribution: parseUnits('2000', USDCDecimal),
-        // price: price, //  1 Wonka = 0.01$ , increasing 1.2x per level
-        // capPerLevel: capPerLevel,
       }
 
-      await PresaleContract.initialize(PresaleConfig, price, capPerLevel)
+      let wonkaPerBlock = parseEther("1")
+
+      await PresaleContract.initialize(PresaleConfig, price, capPerLevel, wonkaPerBlock)
 
       // const config = await PresaleContract.presaleConfig()
       // console.log('config', config)
-      let _price  = await PresaleContract.price(0);
-
+      let _price  = await PresaleContract.wonkaPrice(0);
       console.log('_price', +_price)
-      _price  = await PresaleContract.price(1);
+      _price  = await PresaleContract.wonkaPrice(1);
       console.log('_price', +_price)
 
-      await expect(PresaleContract.initialize(PresaleConfig, price, capPerLevel)).to.be.reverted
+      await expect(PresaleContract.initialize(PresaleConfig, price, capPerLevel, wonkaPerBlock)).to.be.reverted
 
       await WONKA.mint(PresaleContract.address, parseEther('2000000'))
 
@@ -108,39 +110,68 @@ describe('test', function () {
       const config = await PresaleContract.presaleConfig()
     })
     it('Contribute', async function () {
-      await ethers.provider.send('evm_increaseTime', [60])
+      await ethers.provider.send('evm_increaseTime', [60 * 60])
 
       await USDC.connect(alice).approve(PresaleContract.address, parseUnits('1000', USDCDecimal))
       await USDC.connect(bob).approve(PresaleContract.address, parseUnits('1000', USDCDecimal))
       await USDC.connect(quinn).approve(PresaleContract.address, parseUnits('2000', USDCDecimal))
 
-      await expect(PresaleContract.connect(alice).contribute(parseUnits('100', USDCDecimal))).to.be.reverted
-      await expect(PresaleContract.connect(alice).contribute(parseUnits('3000', USDCDecimal))).to.be.reverted
+      await expect(PresaleContract.connect(alice).contribute(parseUnits('100', USDCDecimal), code1)).to.be.reverted
+      await expect(PresaleContract.connect(alice).contribute(parseUnits('3000', USDCDecimal), code1)).to.be.reverted
 
-      await PresaleContract.connect(alice).contribute(parseUnits('1000', USDCDecimal))
-      await PresaleContract.connect(bob).contribute(parseUnits('1000', USDCDecimal))
-
-      await expect(PresaleContract.connect(bob).contribute(parseUnits('1000', USDCDecimal))).to.be.reverted
+      await PresaleContract.connect(alice).contribute(parseUnits('300', USDCDecimal), code1)
+      await PresaleContract.connect(bob).contribute(parseUnits('300', USDCDecimal), code1)
+      await PresaleContract.connect(quinn).contribute(parseUnits('300', USDCDecimal), code2)
+      // await expect(PresaleContract.connect(bob).contribute(parseUnits('1000', USDCDecimal))).to.be.reverted
       
     })
     it('Check Presale Level', async function () {
-      let level = await PresaleContract.presaleLevel()
-      console.log('level', level)
+      let level = await PresaleContract.poolInfo()
+      console.log('level', level.presaleLevel)
       const aWeeksInSeconds = 7 * 24 * 60 * 60 // 3 days * 24 hours * 60 minutes * 60 seconds
 
       // Increase the EVM time to the future timestamp
       await ethers.provider.send('evm_increaseTime', [aWeeksInSeconds])
 
-      await PresaleContract.updatePresaleStatus()
+      await PresaleContract.updatePresaleLevel()
 
-      level = await PresaleContract.presaleLevel()
-      console.log('level', level)
+      level = await PresaleContract.poolInfo()
+      console.log('level', level.presaleLevel)
 
-      await PresaleContract.connect(quinn).contribute(parseUnits('1000', USDCDecimal))
+      // await PresaleContract.connect(quinn).contribute(parseUnits('1000', USDCDecimal))
 
-      level = await PresaleContract.presaleLevel()
-      console.log('level', level)
+      level = await PresaleContract.poolInfo()
+      console.log('level', level.presaleLevel)
     })
+    it('Check Funder Status', async function () {
+      let aliceInfo = await PresaleContract.funders(alice.address)
+      console.log('aliceInfo', aliceInfo)
+      
+      let bobInfo = await PresaleContract.funders(bob.address)
+      console.log('bobInfo', bobInfo)
+
+      let quinnInfo = await PresaleContract.funders(quinn.address)
+      console.log('quinnInfo', quinnInfo)
+    })
+
+    it('Check Funder Reward Amount', async function () {
+      let aliceInfo = await PresaleContract.pendingWonka(alice.address)
+      console.log('aliceInfo', +aliceInfo)
+      let bobInfo = await PresaleContract.pendingWonka(bob.address)
+      console.log('bobInfo  ', +bobInfo)
+      let quinnInfo = await PresaleContract.pendingWonka(quinn.address)
+      console.log('quinnInfo', +quinnInfo)
+    })
+
+    it('Check Affliate Amount', async function () {
+
+      let affiliateInfo = await PresaleContract.affiliate(code1)
+      console.log(code1 + ":" , +affiliateInfo)
+      affiliateInfo = await PresaleContract.affiliate(code2)
+      console.log(code2 + ":" , +affiliateInfo)
+      
+    })
+
     it('Claim', async function () {
       await PresaleContract.setPresaleStatus(1)
 
