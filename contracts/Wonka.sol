@@ -24,7 +24,7 @@ contract WonkaOFT is OFTV2, Pausable {
     event TreasuryUpdated(address indexed treasury);
 
     /**
-     * @notice Create RadiantOFT
+     * @notice Create WonkaOFT
      * @param _tokenName token name
      * @param _symbol token symbol
      * @param _endpoint LZ endpoint for network
@@ -48,7 +48,7 @@ contract WonkaOFT is OFTV2, Pausable {
         }
     }
 
-    function mint(address _to, uint256 _value) external {
+    function mint(address _to, uint256 _value) external onlyOwner() {
         _mint(_to, _value);
     }
 
